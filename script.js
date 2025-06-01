@@ -1,35 +1,43 @@
-const words = ['hangman', 'javascript', 'developer', 'programming', 'web', 'html', 'css', 'code'];
+const words = [
+    'cat', 'dog', 'sun', 'web', 'html', 'css', 'code', 'java', 'node', 'api', 
+    'array', 'loop', 'python', 'react', 'linux', 'logic', 'build', 'cloud', 'data', 
+    'hangman', 'javascript', 'developer', 'programming', 'frontend', 'backend', 'project'
+];
+
 let chosenWord = '';
 let guessedWord = [];
 let incorrectGuesses = [];
 let hangmanStep = 0;
+const maxMistakes = 6;
 
 function chooseWord() {
-    const filteredWords = words.filter(word => word.length >= 2 && word.length <= 3);
+    const filteredWords = words.filter(word => word.length >= 3); // Allow >= 3-letter words
     chosenWord = filteredWords[Math.floor(Math.random() * filteredWords.length)].toUpperCase();
-    guessedWord = Array(chosenWord.length).fill('_');
+    guessedWord = Array.from(chosenWord).map(() => '_');
     incorrectGuesses = [];
     hangmanStep = 0;
 
-    // Display one or two characters initially
-    for (let i = 0; i < Math.min(chosenWord.length, 2); i++) {
-        guessedWord[i] = chosenWord[i];
+    // Reveal one or two random characters
+    const revealCount = Math.min(2, chosenWord.length);
+    const revealIndexes = new Set();
+    while (revealIndexes.size < revealCount) {
+        revealIndexes.add(Math.floor(Math.random() * chosenWord.length));
     }
+    revealIndexes.forEach(index => guessedWord[index] = chosenWord[index]);
+
+    updateDisplay();
 }
 
-function displayWord() {
-    document.getElementById('word-container').innerText = guessedWord.join(' ');
-}
-
-function displayIncorrectGuesses() {
+function updateDisplay() {
+    document.getElementById('word-container').innerHTML = guessedWord.map(letter => 
+    `<div class="letter">${letter}</div>`).join('');
     document.getElementById('incorrect-guesses').innerText = incorrectGuesses.join(', ');
-}
-
-function displayHangman() {
-    document.getElementById('hangman-drawing').style.backgroundImage = `url('hangman${hangmanStep}.png')`;
+    document.getElementById('hangman-drawing').style.backgroundImage = `url('Images/Hangman-${hangmanStep}.png')`;
 }
 
 function checkGuess(letter) {
+    if (guessedWord.includes(letter) || incorrectGuesses.includes(letter)) return;
+
     if (chosenWord.includes(letter)) {
         for (let i = 0; i < chosenWord.length; i++) {
             if (chosenWord[i] === letter) {
@@ -41,41 +49,23 @@ function checkGuess(letter) {
         hangmanStep++;
     }
 
-    displayWord();
-    displayIncorrectGuesses();
-    displayHangman();
+    updateDisplay();
+    checkGameOver();
+}
 
-    if (guessedWord.join('') === chosenWord) {
-        document.getElementById('result').innerText = 'You win! 🎉';
-    } else if (hangmanStep === 6) {
-        document.getElementById('result').innerText = `You lost! The word was ${chosenWord}. 😢`;
+function checkGameOver() {
+    const resultDiv = document.getElementById('result');
+    if (!guessedWord.includes('_')) {
+        resultDiv.innerText = 'You win! 🎉';
+    } else if (hangmanStep >= maxMistakes) {
+        resultDiv.innerText = `You lost! The word was ${chosenWord}. 😢`;
     }
 }
 
-
-
 function resetGame() {
     chooseWord();
-    displayWord();
-    displayIncorrectGuesses();
-    displayHangman();
     document.getElementById('result').innerText = '';
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    // displaySuggestions();
-    chooseWord();
-    displayWord();
-    displayHangman();
-
-    document.addEventListener('keydown', (event) => {
-        const letter = event.key.toUpperCase();
-        if (/^[A-Z]$/.test(letter)) {
-            checkGuess(letter);
-        }
-    });
-    
-});
 
 function displaySuggestions() {
     const suggestionsContainer = document.getElementById('suggestions-container');
@@ -91,3 +81,14 @@ function displaySuggestions() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    chooseWord();
+    displaySuggestions();
+
+    document.addEventListener('keydown', (event) => {
+        const letter = event.key.toUpperCase();
+        if (/^[A-Z]$/.test(letter)) {
+            checkGuess(letter);
+        }
+    });
+});
